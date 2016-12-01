@@ -7,6 +7,8 @@ namespace KeepGrinding
 {
     class Player
     {
+        //NOTE: Using Public instead of Private for a reason?
+        //NOTE: Using int instead of float for a reason?
         private int health;
         private float attack;
         private float defense;
@@ -87,6 +89,10 @@ namespace KeepGrinding
         {
             defense += d;
             points -= d;
+        }
+        public void setPoints(int desiredPoints) 
+        {
+            points = desiredPoints;
         }
         public int getPoints()
         {

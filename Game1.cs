@@ -20,6 +20,11 @@ namespace KeepGrinding
         SpriteBatch spriteBatch;
         Texture2D grey, blue, stripes, brown, white;
         Texture2D p1color, p2color;
+        Texture2D p1Label, p2Label;
+        Texture2D allocBackground, combatBackground;
+        Texture2D allocFloorTexture, combatFloorTexture;
+        Vector2 p1LabelPos, p2LabelPos;
+        Vector2 floorPos;
         Model player1model;
         Model player2model;
         Model weapon1model;
@@ -57,6 +62,8 @@ namespace KeepGrinding
         /// </summary>
         protected override void Initialize()
         {
+            floorPos = new Vector2(0,340);
+
             // TODO: Add your initialization logic here
             graphics.IsFullScreen = false;
             graphics.PreferredBackBufferWidth = 1200;
@@ -71,7 +78,7 @@ namespace KeepGrinding
             //player[1].setStats(5000, 33, 1, 33);
             p1position = w1position = 0;
             p2position = w2position = 5;
-            p1location = new Vector3(p1position, 0, 0);
+            p1location = new Vector3(p1position, 0, 0);//NOTE: 3D instead of 2D for a reason?
             p2location = new Vector3(p2position, 0, 0);
             punch1 = punch2 = punch1Animation = punch2Animation = punch1out = punch2out = gameIsOver = false;
             allocatingStatsStage = true;
@@ -105,6 +112,15 @@ namespace KeepGrinding
             white = Content.Load<Texture2D>("Marble");
             stripes = Content.Load<Texture2D>("Scratches");
             brown = Content.Load<Texture2D>("Wood");
+            
+            allocBackground = Content.Load<Texture2D>("Blue sky");
+            allocFloorTexture = Content.Load<Texture2D>("Green field");
+            combatBackground = Content.Load<Texture2D>("Blue sky");
+            combatFloorTexture = Content.Load<Texture2D>("Green field");
+
+            p1Label = Content.Load<Texture2D>("Player one");
+            p2Label = Content.Load<Texture2D>("Player one");
+            
             player1model = Content.Load<Model>("Cube");
             player2model = Content.Load<Model>("Cube");
             weapon1model = Content.Load<Model>("Cube");
@@ -133,12 +149,12 @@ namespace KeepGrinding
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
             //punch 1
-            if (allocatingStatsStage == true)
+            if (allocatingStatsStage)
             {
                 output =  "Player 2                                         Player 1\n\n";
-                output += "     Press and Hold the Corrosponding Buttons to Add\n\n";
+                output += "     Press and Hold the Corresponding Buttons to Add\n     Press (Enter) or Spend All Points to Begin\n\n";
                 output += "Points Remaining: " + player[1].getPoints();
-                for(int i = output.Length; i < 162; i++)
+                for(int i = output.Length; i < 202; i++)//162 (original value)
                 {
                     output += " ";
                 }
@@ -148,17 +164,29 @@ namespace KeepGrinding
                     output += " ";
                 }
                 output += "\n      (A) Attack: " + (int)player[1].getAttack();
-                for (int i = output.Length; i < 238; i++)
+                //Aligns letters
+                if (player[0].getPoints() < 100)
                 {
-                    output += " ";
+                    for (int i = output.Length; i < 264; i++)
+                    {
+                        output += " ";
+                    }
+                }
+                else
+                {
+                    for (int i = output.Length; i < 265; i++)//238
+                    {
+                        output += " ";
+                    }
                 }
                 output += "(Left) Attack: " + (int)player[0].getAttack();
                 for (int i = output.Length; i < 258; i++)
                 {
                     output += " ";
                 }
+
                 output += "\n     (D) Defense: " + (int)player[1].getDefense();
-                for (int i = output.Length; i < 309; i++)
+                for (int i = output.Length; i < 323; i++)//309
                 {
                     output += " ";
                 }
@@ -168,7 +196,7 @@ namespace KeepGrinding
                     output += " ";
                 }
                 output += "\n       (W) Speed: " + (int)player[1].getSpeed();
-                for (int i = output.Length; i < 387; i++)
+                for (int i = output.Length; i < 383; i++)
                 {
                     output += " ";
                 }
@@ -190,6 +218,10 @@ namespace KeepGrinding
                     {
                         player[1].addSpeed(0.1f);
                     }
+                    if (Keyboard.GetState().IsKeyDown(Keys.Enter))//Starts game
+                    {
+                        player[1].setPoints(0);
+                    }
                 }
                 //player 1
                 if (player[0].getPoints() > 0)
@@ -205,6 +237,10 @@ namespace KeepGrinding
                     if (Keyboard.GetState().IsKeyDown(Keys.Up))
                     {
                         player[0].addSpeed(0.1f);
+                    }
+                    if (Keyboard.GetState().IsKeyDown(Keys.Enter))//Starts game
+                    {
+                        player[0].setPoints(0);
                     }
                 }
 
@@ -424,14 +460,29 @@ namespace KeepGrinding
             transformedReference = Vector3.Transform(thirdPersonReference, rotationMatrix);
             cameraPosition = transformedReference + avatarPosition;
             // TODO: Add your drawing code here
-            spriteBatch.Begin();
+            spriteBatch.Begin();//Background
+            
+            Vector2 zeroSpot = new Vector2(0, 0);
+            if (allocatingStatsStage)
+            {
+                spriteBatch.Draw(allocBackground, zeroSpot, Color.White);
+                spriteBatch.Draw(allocFloorTexture, floorPos, Color.White);
+            }
+            else
+            {
+                spriteBatch.Draw(combatBackground, zeroSpot, Color.White);
+                spriteBatch.Draw(combatFloorTexture, floorPos, Color.White);
+            }
             spriteBatch.End();
+
             DrawModel(weapon1model, p1color, new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0, 0, 0), w1location);
             DrawModel(weapon2model, p2color, new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0, 0, 0), w2location);
             DrawModel(player1model, p1color, new Vector3(1, 1, 1), new Vector3(0, 0, 0), p1location);
             DrawModel(player2model, p2color, new Vector3(1, 1, 1), new Vector3(0, 0, 0), p2location);
 
-            spriteBatch.Begin();
+            spriteBatch.Begin();//Foreground
+
+
             // Find the center of the string
             FontOrigin = font.MeasureString(output) / 2;
             // Draw the string
