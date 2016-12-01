@@ -8,9 +8,19 @@ namespace KeepGrinding
     class Player
     {
         private int health;
-        private int attack;
-        private int defense;
-        private int speed;
+        private float attack;
+        private float defense;
+        private float speed;
+        private float points;
+
+        public Player()
+        {
+            points = 100.0f;
+            attack = 1f;
+            defense = 1f;
+            speed = 1f;
+            health = 5000;
+        }
 
         public void setStats(int h, int a, int s, int d)
         {
@@ -18,6 +28,14 @@ namespace KeepGrinding
             attack = a;
             speed = s;
             defense = d;
+        }
+        public void resetStats()
+        {
+            health = 5000;
+            attack = 1;
+            speed = 1;
+            defense = 1;
+            points = 100;
         }
         public void setHealth(int h)
         {
@@ -35,25 +53,44 @@ namespace KeepGrinding
         {
             defense = d;
         }
-        public void takeDamage(int t)
+        public void takeDamage(float t)
         {
-            health -= t;
+            health -= (int)t;
         }
-        public int getSpeed()
+        public float getSpeed()
         {
             return speed;
         }
-        public int getAttack()
+        public float getAttack()
         {
             return attack;
         }
-        public int getDefense()
+        public float getDefense()
         {
             return defense;
         }
         public int getHealth()
         {
             return health;
+        }
+        public void addSpeed(float s)
+        {
+            speed += s;
+            points -= s;
+        }
+        public void addAttack(float a)
+        {
+            attack += a;
+            points -= a;
+        }
+        public void addDefense(float d)
+        {
+            defense += d;
+            points -= d;
+        }
+        public int getPoints()
+        {
+            return (int)points;
         }
     }
 }

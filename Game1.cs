@@ -29,16 +29,19 @@ namespace KeepGrinding
         float avatarYaw = MathHelper.PiOver2;
         Matrix rotationMatrix;
         Vector3 transformedReference;
-        Vector3 avatarPosition = new Vector3(0, 0, 0);
+        Vector3 avatarPosition = new Vector3(2.5f, 0, 0);
         Vector3 cameraPosition;
         Vector3 p1location, p2location, w1location, w2location;
         float p1position, p2position, w1position, w2position;
         bool punch1, punch2, punch1Animation, punch2Animation, punch1out, punch2out;
-        float speedDivisor = 150f;
+        float SPEED_DIVISOR = 150f;
+        float PUNCH_LENGTH = 3f;
         Vector2 fontPos;
         SpriteFont font;
         Vector2 FontOrigin;
         String output;
+        bool gameIsOver;
+        bool allocatingStatsStage;
 
         public Game1()
         {
@@ -63,14 +66,15 @@ namespace KeepGrinding
             // AllocConsole();
             IsMouseVisible = true;
             player[0] = new Player();
-            player[0].setStats(5000, 33, 34, 33);
+            //player[0].setStats(5000, 33, 30, 33);
             player[1] = new Player();
-            player[1].setStats(5000, 33, 34, 33);
+            //player[1].setStats(5000, 33, 1, 33);
             p1position = w1position = 0;
             p2position = w2position = 5;
             p1location = new Vector3(p1position, 0, 0);
             p2location = new Vector3(p2position, 0, 0);
-            punch1 = punch2 = punch1Animation = punch2Animation = punch1out = punch2out = false;
+            punch1 = punch2 = punch1Animation = punch2Animation = punch1out = punch2out = gameIsOver = false;
+            allocatingStatsStage = true;
             fontPos = new Vector2(graphics.GraphicsDevice.Viewport.Width / 2,
                 graphics.GraphicsDevice.Viewport.Height / 4);
             base.Initialize();
@@ -126,128 +130,242 @@ namespace KeepGrinding
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
             //punch 1
-            if (Keyboard.GetState().IsKeyUp(Keys.Up))
+            if (allocatingStatsStage == true)
             {
-                punch1 = false;
-            }
-            if (Keyboard.GetState().IsKeyDown(Keys.Up) && punch1 == false)
-            {
-                punch1 = true;
-            }
-            if (punch1 == true && punch1Animation == false)
-            {
-                punch1Animation = punch1out = true;
-            }
-            if (punch1Animation == true)
-            {
-                if (punch1out == true)
+                output =  "Player 2                                         Player 1\n\n";
+                output += "     Press and Hold the Corrosponding Buttons to Add\n\n";
+                output += "Points Remaining: " + player[1].getPoints();
+                for(int i = output.Length; i < 162; i++)
                 {
-                    w1position += player[0].getSpeed() / speedDivisor;
+                    output += " ";
                 }
-                if (MathHelper.Distance(w1position, p1position) > 2)
+                output += "Points Remaining: " + player[0].getPoints();
+                for (int i = output.Length; i < 185; i++)
                 {
-                    punch1out = false;
+                    output += " ";
                 }
-                if (punch1out == false)
+                output += "\n      (A) Attack: " + (int)player[1].getAttack();
+                for (int i = output.Length; i < 238; i++)
                 {
-                    w1position -= player[0].getSpeed() / speedDivisor;
+                    output += " ";
                 }
-                if (MathHelper.Distance(w1position, p1position) < 0.2)
+                output += "(Left) Attack: " + (int)player[0].getAttack();
+                for (int i = output.Length; i < 258; i++)
                 {
-                    w1position = p1position;
-                    punch1Animation = false;
+                    output += " ";
                 }
-            }
-            //punch 2
-            if (Keyboard.GetState().IsKeyUp(Keys.W))
+                output += "\n     (D) Defense: " + (int)player[1].getDefense();
+                for (int i = output.Length; i < 309; i++)
+                {
+                    output += " ";
+                }
+                output += "(Right) Defense: " + (int)player[0].getDefense();
+                for (int i = output.Length; i < 331; i++)
+                {
+                    output += " ";
+                }
+                output += "\n       (W) Speed: " + (int)player[1].getSpeed();
+                for (int i = output.Length; i < 387; i++)
+                {
+                    output += " ";
+                }
+                output += "(Up) Speed: " + (int)player[0].getSpeed();
+
+                //adding stats
+                //player 2
+                if (player[1].getPoints() > 0)
+                {
+                    if (Keyboard.GetState().IsKeyDown(Keys.A))
+                    {
+                        player[1].addAttack(0.1f);
+                    }
+                    if (Keyboard.GetState().IsKeyDown(Keys.D))
+                    {
+                        player[1].addDefense(0.1f);
+                    }
+                    if (Keyboard.GetState().IsKeyDown(Keys.W))
+                    {
+                        player[1].addSpeed(0.1f);
+                    }
+                }
+                //player 1
+                if (player[0].getPoints() > 0)
+                {
+                    if (Keyboard.GetState().IsKeyDown(Keys.Left))
+                    {
+                        player[0].addAttack(0.1f);
+                    }
+                    if (Keyboard.GetState().IsKeyDown(Keys.Right))
+                    {
+                        player[0].addDefense(0.1f);
+                    }
+                    if (Keyboard.GetState().IsKeyDown(Keys.Up))
+                    {
+                        player[0].addSpeed(0.1f);
+                    }
+                }
+
+                //ending the stage
+                if(player[0].getPoints() <= 0 && player[1].getPoints() <= 0 && Keyboard.GetState().GetPressedKeys().Length == 0)
+                {
+                    allocatingStatsStage = false;
+                }
+
+            } // end allocating stats stage
+            else // start fighting stage
             {
-                punch2 = false;
-            }
-            if (Keyboard.GetState().IsKeyDown(Keys.W) && punch2 == false)
-            {
-                punch2 = true;
-            }
-            if (punch2 == true && punch2Animation == false)
-            {
-                punch2Animation = punch2out = true;
-            }
-            if (punch2Animation == true)
-            {
-                if (punch2out == true)
+                if (Keyboard.GetState().IsKeyUp(Keys.Up))
                 {
-                    w2position -= player[1].getSpeed() / speedDivisor;
+                    punch1 = false;
                 }
-                if (MathHelper.Distance(w2position, p2position) > 2)
+                if (Keyboard.GetState().IsKeyDown(Keys.Up) && punch1 == false)
                 {
-                    punch2out = false;
+                    punch1 = true;
                 }
-                if (punch2out == false)
+                if (punch1 == true && punch1Animation == false)
                 {
-                    w2position += player[1].getSpeed() / speedDivisor;
+                    punch1Animation = punch1out = true;
                 }
-                if (MathHelper.Distance(w2position, p2position) < 0.2)
+                if (punch1Animation == true)
                 {
+                    if (punch1out == true)
+                    {
+                        w1position += player[0].getSpeed() / SPEED_DIVISOR;
+                    }
+                    if (MathHelper.Distance(w1position, p1position) > PUNCH_LENGTH)
+                    {
+                        punch1out = false;
+                    }
+                    if (punch1out == false)
+                    {
+                        w1position -= player[0].getSpeed() / SPEED_DIVISOR;
+                    }
+                    if (MathHelper.Distance(w1position, p1position) < 0.2 && punch1out == false)
+                    {
+                        w1position = p1position;
+                        punch1Animation = false;
+                    }
+                }
+                //punch 2
+                if (Keyboard.GetState().IsKeyUp(Keys.W))
+                {
+                    punch2 = false;
+                }
+                if (Keyboard.GetState().IsKeyDown(Keys.W) && punch2 == false)
+                {
+                    punch2 = true;
+                }
+                if (punch2 == true && punch2Animation == false)
+                {
+                    punch2Animation = punch2out = true;
+                }
+                if (punch2Animation == true)
+                {
+                    if (punch2out == true)
+                    {
+                        w2position -= player[1].getSpeed() / SPEED_DIVISOR;
+                    }
+                    if (MathHelper.Distance(w2position, p2position) > PUNCH_LENGTH)
+                    {
+                        punch2out = false;
+                    }
+                    if (punch2out == false)
+                    {
+                        w2position += player[1].getSpeed() / SPEED_DIVISOR;
+                    }
+                    if (MathHelper.Distance(w2position, p2position) < 0.2 && punch2out == false)
+                    {
+                        w2position = p2position;
+                        punch2Animation = false;
+                    }
+                }
+                //player 2 movement
+                if (punch2Animation == false && Keyboard.GetState().IsKeyDown(Keys.W) == false)
+                {
+                    if (Keyboard.GetState().IsKeyDown(Keys.A))
+                    {
+                        p2position += player[1].getSpeed() / SPEED_DIVISOR;
+                    }
+                    if (Keyboard.GetState().IsKeyDown(Keys.D))
+                    {
+                        p2position -= player[1].getSpeed() / SPEED_DIVISOR;
+                    }
                     w2position = p2position;
-                    punch2Animation = false;
                 }
-            }
-            //player 2 movement
-            if (punch2Animation == false && Keyboard.GetState().IsKeyDown(Keys.W) == false)
-            {
-                if (Keyboard.GetState().IsKeyDown(Keys.A))
+                //player 1 movement
+                if (punch1Animation == false && Keyboard.GetState().IsKeyDown(Keys.Up) == false)
                 {
-                    p2position += player[1].getSpeed() / speedDivisor;
+                    if (Keyboard.GetState().IsKeyDown(Keys.Left))
+                    {
+                        p1position += player[0].getSpeed() / SPEED_DIVISOR;
+                    }
+                    if (Keyboard.GetState().IsKeyDown(Keys.Right))
+                    {
+                        p1position -= player[0].getSpeed() / SPEED_DIVISOR;
+                    }
+                    w1position = p1position;
                 }
-                if (Keyboard.GetState().IsKeyDown(Keys.D))
+                // damage from punches
+                if (gameIsOver == false)
                 {
-                    p2position -= player[1].getSpeed() / speedDivisor;
+                    if (w1position > (p2position - 1))
+                    {
+                        calculateDamage(1);
+                    }
+                    if (w2position < (p1position + 1))
+                    {
+                        calculateDamage(0);
+                    }
                 }
-                w2position = p2position;
-            }
-            //player 1 movement
-            if (punch1Animation == false && Keyboard.GetState().IsKeyDown(Keys.Up) == false)
-            {
-                if (Keyboard.GetState().IsKeyDown(Keys.Left))
+                // TODO: Add your update logic here
+                p1location = new Vector3(p1position, 0, 0);
+                p2location = new Vector3(p2position, 0, 0);
+                w1location = new Vector3(w1position, 0, 0);
+                w2location = new Vector3(w2position, 0, 0);
+                output = "Player 2 HP: " + player[1].getHealth();
+                output += "                            ";
+                output += "Player 1 HP: " + player[0].getHealth();
+                if (player[0].getHealth() <= 0 && player[1].getHealth() <= 0)
                 {
-                    p1position += player[0].getSpeed() / speedDivisor;
+                    gameOver(2);
                 }
-                if (Keyboard.GetState().IsKeyDown(Keys.Right))
+                else if (player[0].getHealth() <= 0)
                 {
-                    p1position -= player[0].getSpeed() / speedDivisor;
+                    gameOver(1);
                 }
-                w1position = p1position;
-            }
-            // damage from punches
-            if(w1position > (p2position - 1))
-            {
-                calculateDamage(1);
-            }
-            if(w2position < (p1position + 1))
-            {
-                calculateDamage(0);
-            }
-            // TODO: Add your update logic here
-            p1location = new Vector3(p1position, 0, 0);
-            p2location = new Vector3(p2position, 0, 0);
-            w1location = new Vector3(w1position, 0, 0);
-            w2location = new Vector3(w2position, 0, 0);
-            output = "Player 2 HP: " + player[1].getHealth();
-            output += "                            ";
-            output += "Player 1 HP: " + player[0].getHealth();
-            if(player[0].getHealth() <= 0)
-            {
-                gameOver(1);
-            }
-            else if(player[1].getHealth() <= 0)
-            {
-                gameOver(0);
-            }
+                else if (player[1].getHealth() <= 0)
+                {
+                    gameOver(0);
+                }
+            } // end fighting stage
             base.Update(gameTime);
         }
-
+        
         void gameOver(int winner)
         {
-            output = "Enough! Player " + (winner + 1) + " Wins!!!";
+            gameIsOver = true;
+            if (winner == 2)
+            {
+                output = "Enough! Both Players Are Down!!!";
+            }
+            else
+            {
+                output = "Enough! Player " + (winner + 1) + " Wins!!!";
+            }
+            output += "\nPress Enter to play again...";
+            if(Keyboard.GetState().IsKeyDown(Keys.Enter))
+            {
+                player[0].resetStats();
+                player[1].resetStats();
+                p1position = w1position = 0;
+                p2position = w2position = 5;
+                p1location = new Vector3(p1position, 0, 0);
+                p2location = new Vector3(p2position, 0, 0);
+                w1location = new Vector3(w1position, 0, 0);
+                w2location = new Vector3(w2position, 0, 0);
+                punch1 = punch2 = punch1Animation = punch2Animation = punch1out = punch2out = gameIsOver = false;
+                allocatingStatsStage = true;
+            }
         }
 
         void DrawModel(Model model, Texture2D texture, Vector3 scale, Vector3 rotation, Vector3 location)
