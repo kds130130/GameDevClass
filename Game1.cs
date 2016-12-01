@@ -18,8 +18,8 @@ namespace KeepGrinding
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        Texture2D grey;
-        Texture2D blue;
+        Texture2D grey, blue, stripes, brown, white;
+        Texture2D p1color, p2color;
         Model player1model;
         Model player2model;
         Model weapon1model;
@@ -42,7 +42,7 @@ namespace KeepGrinding
         String output;
         bool gameIsOver;
         bool allocatingStatsStage;
-
+        int rand;
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -100,8 +100,11 @@ namespace KeepGrinding
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            grey = Content.Load<Texture2D>("Hexes");
-            blue = Content.Load<Texture2D>("HexesSpecular");
+            p2color = grey = Content.Load<Texture2D>("Hexes");
+            p1color = blue = Content.Load<Texture2D>("HexesSpecular");
+            white = Content.Load<Texture2D>("Marble");
+            stripes = Content.Load<Texture2D>("Scratches");
+            brown = Content.Load<Texture2D>("Wood");
             player1model = Content.Load<Model>("Cube");
             player2model = Content.Load<Model>("Cube");
             weapon1model = Content.Load<Model>("Cube");
@@ -338,7 +341,30 @@ namespace KeepGrinding
                     gameOver(0);
                 }
             } // end fighting stage
+            // changing skins
+            if(Keyboard.GetState().IsKeyDown(Keys.S))
+            {
+                p2color = newSkin();
+            }
+            if(Keyboard.GetState().IsKeyDown(Keys.Down))
+            {
+                p1color = newSkin();
+            }
+
             base.Update(gameTime);
+        }
+
+        Texture2D newSkin()
+        {
+            rand = new Random().Next(0, 5);
+            switch(rand)
+            {
+                case 0: return blue;
+                case 1: return white;
+                case 2: return stripes;
+                case 3: return brown; 
+                default: return grey;
+            }
         }
         
         void gameOver(int winner)
@@ -400,10 +426,10 @@ namespace KeepGrinding
             // TODO: Add your drawing code here
             spriteBatch.Begin();
             spriteBatch.End();
-            DrawModel(weapon1model, grey, new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0, 0, 0), w1location);
-            DrawModel(weapon2model, blue, new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0, 0, 0), w2location);
-            DrawModel(player1model, grey, new Vector3(1, 1, 1), new Vector3(0, 0, 0), p1location);
-            DrawModel(player2model, blue, new Vector3(1, 1, 1), new Vector3(0, 0, 0), p2location);
+            DrawModel(weapon1model, p1color, new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0, 0, 0), w1location);
+            DrawModel(weapon2model, p2color, new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0, 0, 0), w2location);
+            DrawModel(player1model, p1color, new Vector3(1, 1, 1), new Vector3(0, 0, 0), p1location);
+            DrawModel(player2model, p2color, new Vector3(1, 1, 1), new Vector3(0, 0, 0), p2location);
 
             spriteBatch.Begin();
             // Find the center of the string
@@ -411,6 +437,8 @@ namespace KeepGrinding
             // Draw the string
             spriteBatch.DrawString(font, output, fontPos, Color.Black,
                 0, FontOrigin, 1.0f, SpriteEffects.None, 0.5f);
+            //Placing a tag underneath the models
+            //spriteBatch.DrawString(font, "Player 1", new Vector2(p1location.X + 760f, p1location.Y + 400f), Color.Black, 0, font.MeasureString("Player 1") / 2, 1.0f, SpriteEffects.None, 0.5f);
             spriteBatch.End();
             base.Draw(gameTime);
         }
