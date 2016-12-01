@@ -29,7 +29,7 @@ namespace KeepGrinding
         Model player2model;
         Model weapon1model;
         Model weapon2model;
-        Player [] player = new Player[2];
+        Player[] player = new Player[2];
         Vector3 thirdPersonReference = new Vector3(100, 0, 0);
         float avatarYaw = MathHelper.PiOver2;
         Matrix rotationMatrix;
@@ -62,7 +62,7 @@ namespace KeepGrinding
         /// </summary>
         protected override void Initialize()
         {
-            floorPos = new Vector2(0,340);
+            floorPos = new Vector2(0, 340);
 
             // TODO: Add your initialization logic here
             graphics.IsFullScreen = false;
@@ -112,15 +112,15 @@ namespace KeepGrinding
             white = Content.Load<Texture2D>("Marble");
             stripes = Content.Load<Texture2D>("Scratches");
             brown = Content.Load<Texture2D>("Wood");
-            
+
             allocBackground = Content.Load<Texture2D>("Blue sky");
             allocFloorTexture = Content.Load<Texture2D>("Green field");
             combatBackground = Content.Load<Texture2D>("Blue sky");
             combatFloorTexture = Content.Load<Texture2D>("Green field");
 
             p1Label = Content.Load<Texture2D>("Player one");
-            p2Label = Content.Load<Texture2D>("Player one");
-            
+            p2Label = Content.Load<Texture2D>("Player two");
+
             player1model = Content.Load<Model>("Cube");
             player2model = Content.Load<Model>("Cube");
             weapon1model = Content.Load<Model>("Cube");
@@ -151,10 +151,10 @@ namespace KeepGrinding
             //punch 1
             if (allocatingStatsStage)
             {
-                output =  "Player 2                                         Player 1\n\n";
+                output = "Player 2                                         Player 1\n\n";
                 output += "     Press and Hold the Corresponding Buttons to Add\n     Press (Enter) or Spend All Points to Begin\n\n";
                 output += "Points Remaining: " + player[1].getPoints();
-                for(int i = output.Length; i < 202; i++)//162 (original value)
+                for (int i = output.Length; i < 202; i++)//162 (original value)
                 {
                     output += " ";
                 }
@@ -218,10 +218,6 @@ namespace KeepGrinding
                     {
                         player[1].addSpeed(0.1f);
                     }
-                    if (Keyboard.GetState().IsKeyDown(Keys.Enter))//Starts game
-                    {
-                        player[1].setPoints(0);
-                    }
                 }
                 //player 1
                 if (player[0].getPoints() > 0)
@@ -238,14 +234,14 @@ namespace KeepGrinding
                     {
                         player[0].addSpeed(0.1f);
                     }
-                    if (Keyboard.GetState().IsKeyDown(Keys.Enter))//Starts game
-                    {
-                        player[0].setPoints(0);
-                    }
                 }
-
+                //quick start
+                if (Keyboard.GetState().IsKeyDown(Keys.Space))//Starts game
+                {
+                    allocatingStatsStage = false;
+                }
                 //ending the stage
-                if(player[0].getPoints() <= 0 && player[1].getPoints() <= 0 && Keyboard.GetState().GetPressedKeys().Length == 0)
+                if (player[0].getPoints() <= 0 && player[1].getPoints() <= 0 && Keyboard.GetState().GetPressedKeys().Length == 0)
                 {
                     allocatingStatsStage = false;
                 }
@@ -321,11 +317,11 @@ namespace KeepGrinding
                 //player 2 movement
                 if (punch2Animation == false && Keyboard.GetState().IsKeyDown(Keys.W) == false)
                 {
-                    if (Keyboard.GetState().IsKeyDown(Keys.A))
+                    if (Keyboard.GetState().IsKeyDown(Keys.A) && p2position < 11)
                     {
                         p2position += player[1].getSpeed() / SPEED_DIVISOR;
                     }
-                    if (Keyboard.GetState().IsKeyDown(Keys.D))
+                    if (Keyboard.GetState().IsKeyDown(Keys.D) && p2position > p1position + 1.6f)
                     {
                         p2position -= player[1].getSpeed() / SPEED_DIVISOR;
                     }
@@ -334,11 +330,11 @@ namespace KeepGrinding
                 //player 1 movement
                 if (punch1Animation == false && Keyboard.GetState().IsKeyDown(Keys.Up) == false)
                 {
-                    if (Keyboard.GetState().IsKeyDown(Keys.Left))
+                    if (Keyboard.GetState().IsKeyDown(Keys.Left) && p1position < p2position - 1.6f)
                     {
                         p1position += player[0].getSpeed() / SPEED_DIVISOR;
                     }
-                    if (Keyboard.GetState().IsKeyDown(Keys.Right))
+                    if (Keyboard.GetState().IsKeyDown(Keys.Right) && p1position > -6)
                     {
                         p1position -= player[0].getSpeed() / SPEED_DIVISOR;
                     }
@@ -378,11 +374,11 @@ namespace KeepGrinding
                 }
             } // end fighting stage
             // changing skins
-            if(Keyboard.GetState().IsKeyDown(Keys.S))
+            if (Keyboard.GetState().IsKeyDown(Keys.S))
             {
                 p2color = newSkin();
             }
-            if(Keyboard.GetState().IsKeyDown(Keys.Down))
+            if (Keyboard.GetState().IsKeyDown(Keys.Down))
             {
                 p1color = newSkin();
             }
@@ -393,16 +389,16 @@ namespace KeepGrinding
         Texture2D newSkin()
         {
             rand = new Random().Next(0, 5);
-            switch(rand)
+            switch (rand)
             {
                 case 0: return blue;
                 case 1: return white;
                 case 2: return stripes;
-                case 3: return brown; 
+                case 3: return brown;
                 default: return grey;
             }
         }
-        
+
         void gameOver(int winner)
         {
             gameIsOver = true;
@@ -415,7 +411,7 @@ namespace KeepGrinding
                 output = "Enough! Player " + (winner + 1) + " Wins!!!";
             }
             output += "\nPress Enter to play again...";
-            if(Keyboard.GetState().IsKeyDown(Keys.Enter))
+            if (Keyboard.GetState().IsKeyDown(Keys.Enter))
             {
                 player[0].resetStats();
                 player[1].resetStats();
@@ -461,7 +457,7 @@ namespace KeepGrinding
             cameraPosition = transformedReference + avatarPosition;
             // TODO: Add your drawing code here
             spriteBatch.Begin();//Background
-            
+
             Vector2 zeroSpot = new Vector2(0, 0);
             if (allocatingStatsStage)
             {
