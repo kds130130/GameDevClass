@@ -154,39 +154,39 @@ namespace KeepGrinding
                 output = "Player 2                                         Player 1\n\n";
                 output += "     Press and Hold the Corresponding Buttons to Add\n     Press (Enter) or Spend All Points to Begin\n\n";
                 output += "Points Remaining: " + player[1].getPoints();
-                for (int i = output.Length; i < 202; i++)//162 (original value)
+                if (player[1].getPoints() >= 100)
+                {
+                    output += " ";
+                }
+                for (int i = output.Length; i < 201; i++)//201
                 {
                     output += " ";
                 }
                 output += "Points Remaining: " + player[0].getPoints();
-                for (int i = output.Length; i < 185; i++)
+                if (player[0].getPoints() < 100)
                 {
                     output += " ";
                 }
+                /*for (int i = output.Length; i < 185; i++)//185
+                {
+                    output += " ";
+                }*/
                 output += "\n      (A) Attack: " + (int)player[1].getAttack();
-                //Aligns letters
-                if (player[0].getPoints() < 100)
+                for (int i = output.Length; i < 263; i++)//265
                 {
-                    for (int i = output.Length; i < 264; i++)
-                    {
-                        output += " ";
-                    }
-                }
-                else
-                {
-                    for (int i = output.Length; i < 265; i++)//238
-                    {
-                        output += " ";
-                    }
+                    output += " ";
                 }
                 output += "(Left) Attack: " + (int)player[0].getAttack();
                 for (int i = output.Length; i < 258; i++)
                 {
                     output += " ";
                 }
-
                 output += "\n     (D) Defense: " + (int)player[1].getDefense();
-                for (int i = output.Length; i < 323; i++)//309
+                for (int i = output.Length; i < 320; i++)//309
+                {
+                    output += " ";
+                }
+                if (player[0].getAttack() >= 10)
                 {
                     output += " ";
                 }
@@ -196,7 +196,15 @@ namespace KeepGrinding
                     output += " ";
                 }
                 output += "\n       (W) Speed: " + (int)player[1].getSpeed();
-                for (int i = output.Length; i < 383; i++)
+                for (int i = output.Length; i < 379; i++)//383
+                {
+                    output += " ";
+                }
+                if (player[0].getAttack() >= 10)
+                {
+                    output += " ";
+                }
+                if (player[0].getDefense() >= 10)
                 {
                     output += " ";
                 }
@@ -236,7 +244,7 @@ namespace KeepGrinding
                     }
                 }
                 //quick start
-                if (Keyboard.GetState().IsKeyDown(Keys.Space))//Starts game
+                if (Keyboard.GetState().IsKeyDown(Keys.Enter))//Starts game
                 {
                     allocatingStatsStage = false;
                 }
