@@ -20,7 +20,11 @@ namespace KeepGrinding
         SpriteBatch spriteBatch;
         Texture2D grey, blue, stripes, brown, white;
         Texture2D p1color, p2color;
+        int p1LastSkin, p2LastSkin;
         Texture2D p1Label, p2Label;
+        Texture2D p1Suffering, p2Suffering;
+        int p1SufferingTimer, p2SufferingTimer;
+        double p1Knockback, p2Knockback;
         Texture2D allocBackground, combatBackground;
         Texture2D allocFloorTexture, combatFloorTexture;
         Vector2 p1LabelPos, p2LabelPos;
@@ -63,6 +67,7 @@ namespace KeepGrinding
         protected override void Initialize()
         {
             floorPos = new Vector2(0, 340);
+            p1Knockback = p2Knockback = 0;
 
             // TODO: Add your initialization logic here
             graphics.IsFullScreen = false;
@@ -118,6 +123,8 @@ namespace KeepGrinding
             combatBackground = Content.Load<Texture2D>("Blue sky");
             combatFloorTexture = Content.Load<Texture2D>("Green field");
 
+            p1Suffering = Content.Load<Texture2D>("Red");
+            p2Suffering = Content.Load<Texture2D>("Red");
             p1Label = Content.Load<Texture2D>("Player one");
             p2Label = Content.Load<Texture2D>("Player two");
 
@@ -209,6 +216,7 @@ namespace KeepGrinding
                     output += " ";
                 }
                 output += "(Up) Speed: " + (int)player[0].getSpeed();
+                
 
                 //adding stats
                 //player 2
@@ -244,7 +252,7 @@ namespace KeepGrinding
                     }
                 }
                 //quick start
-                if (Keyboard.GetState().IsKeyDown(Keys.Enter))//Starts game
+                if (Keyboard.GetState().IsKeyDown(Keys.Enter))//Starts game. Change on-screen text if the hotkey changes
                 {
                     allocatingStatsStage = false;
                 }
@@ -354,13 +362,57 @@ namespace KeepGrinding
                     if (w1position > (p2position - 1))
                     {
                         calculateDamage(1);
+                        p2ShowSuffering(5);
+                        p2Knockback = 0.5;//NOTE: change this to change initial knockback force
                     }
                     if (w2position < (p1position + 1))
                     {
                         calculateDamage(0);
+                        p1ShowSuffering(5);
+                        p1Knockback = 0.5;
                     }
                 }
                 // TODO: Add your update logic here
+
+                //Animation of characters suffering
+                //Triggered by p1ShowSuffering methods
+                if (p1SufferingTimer > 0)
+                {
+                    //Sets new texture
+                    p1color = p1Suffering;
+                    p1SufferingTimer-=1;
+                }
+                else
+                {
+                    //Replaces texture with old one
+                    p1color = p1NewSkin(p1LastSkin);
+                }
+                if (p2SufferingTimer > 0)
+                {
+                    //Sets new texture
+                    p2color = p2Suffering;
+                    p2SufferingTimer-=1;
+                }
+                else
+                {
+                    //Replaces texture with old one
+                    p2color = p2NewSkin(p2LastSkin);
+
+                }
+
+                //Momentum from punches
+                if (p1Knockback > 0) 
+                {
+                    p1position -= (float)p1Knockback;
+                    p1Knockback-=0.05;//NOTE: change this to modify sliding distance
+                }
+
+                if (p2Knockback > 0)
+                {
+                    p2position += (float)p2Knockback;
+                    p2Knockback-=0.05;
+                }
+
                 p1location = new Vector3(p1position, 0, 0);
                 p2location = new Vector3(p2position, 0, 0);
                 w1location = new Vector3(w1position, 0, 0);
@@ -368,6 +420,7 @@ namespace KeepGrinding
                 output = "Player 2 HP: " + player[1].getHealth();
                 output += "                            ";
                 output += "Player 1 HP: " + player[0].getHealth();
+                //output += "\n" + p2GetScreenX() + "    " + p1GetScreenX();//Displays screen coordinates of getScreenX method
                 if (player[0].getHealth() <= 0 && player[1].getHealth() <= 0)
                 {
                     gameOver(2);
@@ -384,11 +437,11 @@ namespace KeepGrinding
             // changing skins
             if (Keyboard.GetState().IsKeyDown(Keys.S))
             {
-                p2color = newSkin();
+                p2color = p2NewSkin(new Random().Next(0,5));
             }
             if (Keyboard.GetState().IsKeyDown(Keys.Down))
             {
-                p1color = newSkin();
+                p1color = p1NewSkin(new Random().Next(0,5));
             }
 
             base.Update(gameTime);
@@ -405,6 +458,59 @@ namespace KeepGrinding
                 case 3: return brown;
                 default: return grey;
             }
+        }
+
+        Texture2D p1NewSkin(int skinID)
+        {
+            p1LastSkin = skinID;
+            switch (skinID)
+            {
+                case 0: return blue;
+                case 1: return white;
+                case 2: return stripes;
+                case 3: return brown;
+                default: return grey;
+            }
+        }
+
+        Texture2D p2NewSkin(int skinID)
+        {
+            p2LastSkin = skinID;
+            switch (skinID)
+            {
+                case 0: return blue;
+                case 1: return white;
+                case 2: return stripes;
+                case 3: return brown;
+                default: return grey;
+            }
+        }
+
+        void p1ShowSuffering(int duration)
+        {
+            p1SufferingTimer = duration;
+        }
+
+        void p2ShowSuffering(int duration)
+        {
+            p2SufferingTimer = duration;
+        }
+
+        //Converts 3D coordinates of players to return screen coordinates (very crudely)
+        int p1GetScreenX()
+        {
+            Vector3 coord = GraphicsDevice.Viewport.Project(p1location, Matrix.CreatePerspectiveFieldOfView(0.1f, graphics.GraphicsDevice.Viewport.AspectRatio, 0.1f, 10000.0f), Matrix.CreateLookAt(cameraPosition, avatarPosition, new Vector3(0.0f, 0.0f, 1.0f)), Matrix.CreateScale(new Vector3(1,1,1)) * Matrix.CreateFromYawPitchRoll(0, 0, 0 /*rotation.(x,y,z)*/) * Matrix.CreateTranslation(p1location));
+            float fValue = (coord.X + 689.8211f) * (1200f/2250.2361f);
+            int retVal = (int)Math.Round(fValue, 0);
+            return retVal;
+        }
+
+        int p2GetScreenX()
+        {
+            Vector3 coord = GraphicsDevice.Viewport.Project(p2location, Matrix.CreatePerspectiveFieldOfView(0.1f, graphics.GraphicsDevice.Viewport.AspectRatio, 0.1f, 10000.0f), Matrix.CreateLookAt(cameraPosition, avatarPosition, new Vector3(0.0f, 0.0f, 1.0f)), Matrix.CreateScale(new Vector3(1, 1, 1)) * Matrix.CreateFromYawPitchRoll(0, 0, 0 /*rotation.(x,y,z)*/) * Matrix.CreateTranslation(p2location));
+            float fValue = (coord.X + 689.8211f) * (1200f / 2250.2361f);
+            int retVal = (int)Math.Round(fValue, 0);
+            return retVal;
         }
 
         void gameOver(int winner)
