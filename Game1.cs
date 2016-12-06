@@ -29,19 +29,16 @@ namespace KeepGrinding
         Texture2D allocFloorTexture, combatFloorTexture;
         Vector2 p1LabelPos, p2LabelPos;
         Vector2 floorPos;
-        Model player1model;
-        Model player2model;
-        Model weapon1model;
-        Model weapon2model;
+        Vector2 p1Position;
+        float p1X, p1Y;
+        Vector2 p2Position;
+        float p2X, p2Y;
+        Vector2 w1Position;
+        float w1X, w1Y;
+        Vector2 w2Position;
+        float w2X, w2Y;
         Player[] player = new Player[2];
-        Vector3 thirdPersonReference = new Vector3(100, 0, 0);
         float avatarYaw = MathHelper.PiOver2;
-        Matrix rotationMatrix;
-        Vector3 transformedReference;
-        Vector3 avatarPosition = new Vector3(2.5f, 0, 0);
-        Vector3 cameraPosition;
-        Vector3 p1location, p2location, w1location, w2location;
-        float p1position, p2position, w1position, w2position;
         bool punch1, punch2, punch1Animation, punch2Animation, punch1out, punch2out;
         float SPEED_DIVISOR = 150f;
         float PUNCH_LENGTH = 3f;
@@ -81,10 +78,20 @@ namespace KeepGrinding
             //player[0].setStats(5000, 33, 30, 33);
             player[1] = new Player();
             //player[1].setStats(5000, 33, 1, 33);
-            p1position = w1position = 0;
-            p2position = w2position = 5;
-            p1location = new Vector3(p1position, 0, 0);//NOTE: 3D instead of 2D for a reason?
-            p2location = new Vector3(p2position, 0, 0);
+
+            p1X = 100;
+            p1Y = 300;
+            p1Position = new Vector2(p1X, p1Y);
+            p2X = 900;
+            p2Y = 300;
+            p2Position = new Vector2(p2X, p2Y);
+            w1X = 100;
+            w1Y = 300;
+            w1Position = new Vector2(w1X, w1Y);
+            w2X = 900;
+            w2Y = 300;
+            w2Position = new Vector2(w2X, w2Y);
+
             punch1 = punch2 = punch1Animation = punch2Animation = punch1out = punch2out = gameIsOver = false;
             allocatingStatsStage = true;
             fontPos = new Vector2(graphics.GraphicsDevice.Viewport.Width / 2,
@@ -112,8 +119,8 @@ namespace KeepGrinding
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            p2color = grey = Content.Load<Texture2D>("Hexes");
-            p1color = blue = Content.Load<Texture2D>("HexesSpecular");
+            p2color = grey = Content.Load<Texture2D>("Player two");
+            p1color = blue = Content.Load<Texture2D>("Player one");
             white = Content.Load<Texture2D>("Marble");
             stripes = Content.Load<Texture2D>("Scratches");
             brown = Content.Load<Texture2D>("Wood");
@@ -128,10 +135,6 @@ namespace KeepGrinding
             p1Label = Content.Load<Texture2D>("Player one");
             p2Label = Content.Load<Texture2D>("Player two");
 
-            player1model = Content.Load<Model>("Cube");
-            player2model = Content.Load<Model>("Cube");
-            weapon1model = Content.Load<Model>("Cube");
-            weapon2model = Content.Load<Model>("Cube");
             font = Content.Load<SpriteFont>("CourierNew");
             // TODO: use this.Content to load your game content here
         }
@@ -281,19 +284,19 @@ namespace KeepGrinding
                 {
                     if (punch1out == true)
                     {
-                        w1position += player[0].getSpeed() / SPEED_DIVISOR;
+                        w1X += player[0].getSpeed() / SPEED_DIVISOR;
                     }
-                    if (MathHelper.Distance(w1position, p1position) > PUNCH_LENGTH)
+                    if (MathHelper.Distance(w1X, p1X) > PUNCH_LENGTH)
                     {
                         punch1out = false;
                     }
                     if (punch1out == false)
                     {
-                        w1position -= player[0].getSpeed() / SPEED_DIVISOR;
+                        w1X -= player[0].getSpeed() / SPEED_DIVISOR;
                     }
-                    if (MathHelper.Distance(w1position, p1position) < 0.2 && punch1out == false)
+                    if (MathHelper.Distance(w1X, p1X) < 0.2 && punch1out == false)
                     {
-                        w1position = p1position;
+                        w1X = p1X;
                         punch1Animation = false;
                     }
                 }
@@ -314,58 +317,58 @@ namespace KeepGrinding
                 {
                     if (punch2out == true)
                     {
-                        w2position -= player[1].getSpeed() / SPEED_DIVISOR;
+                        w2X -= player[1].getSpeed() / SPEED_DIVISOR;
                     }
-                    if (MathHelper.Distance(w2position, p2position) > PUNCH_LENGTH)
+                    if (MathHelper.Distance(w2X, p2X) > PUNCH_LENGTH)
                     {
                         punch2out = false;
                     }
                     if (punch2out == false)
                     {
-                        w2position += player[1].getSpeed() / SPEED_DIVISOR;
+                        w2X += player[1].getSpeed() / SPEED_DIVISOR;
                     }
-                    if (MathHelper.Distance(w2position, p2position) < 0.2 && punch2out == false)
+                    if (MathHelper.Distance(w2X, p2X) < 0.2 && punch2out == false)
                     {
-                        w2position = p2position;
+                        w2X = p2X;
                         punch2Animation = false;
                     }
                 }
                 //player 2 movement
                 if (punch2Animation == false && Keyboard.GetState().IsKeyDown(Keys.W) == false)
                 {
-                    if (Keyboard.GetState().IsKeyDown(Keys.A) && p2position < 11)
+                    if (Keyboard.GetState().IsKeyDown(Keys.A) && p2X < 11)
                     {
-                        p2position += player[1].getSpeed() / SPEED_DIVISOR;
+                        p2X += player[1].getSpeed() / SPEED_DIVISOR;
                     }
-                    if (Keyboard.GetState().IsKeyDown(Keys.D) && p2position > p1position + 1.6f)
+                    if (Keyboard.GetState().IsKeyDown(Keys.D) && p2X > p1X + 1.6f)
                     {
-                        p2position -= player[1].getSpeed() / SPEED_DIVISOR;
+                        p2X -= player[1].getSpeed() / SPEED_DIVISOR;
                     }
-                    w2position = p2position;
+                    w2X = p2X;
                 }
                 //player 1 movement
                 if (punch1Animation == false && Keyboard.GetState().IsKeyDown(Keys.Up) == false)
                 {
-                    if (Keyboard.GetState().IsKeyDown(Keys.Left) && p1position < p2position - 1.6f)
+                    if (Keyboard.GetState().IsKeyDown(Keys.Left) && p1X < p2X - 1.6f)
                     {
-                        p1position += player[0].getSpeed() / SPEED_DIVISOR;
+                        p1X += player[0].getSpeed() / SPEED_DIVISOR;
                     }
-                    if (Keyboard.GetState().IsKeyDown(Keys.Right) && p1position > -6)
+                    if (Keyboard.GetState().IsKeyDown(Keys.Right) && p1X > -6)
                     {
-                        p1position -= player[0].getSpeed() / SPEED_DIVISOR;
+                        p1X -= player[0].getSpeed() / SPEED_DIVISOR;
                     }
-                    w1position = p1position;
+                    w1X = p1X;
                 }
                 // damage from punches
                 if (gameIsOver == false)
                 {
-                    if (w1position > (p2position - 1))
+                    if (w1X > (p2X - 1))
                     {
                         calculateDamage(1);
                         p2ShowSuffering(5);
                         p2Knockback = 0.5;//NOTE: change this to change initial knockback force
                     }
-                    if (w2position < (p1position + 1))
+                    if (w2X < (p1X + 1))
                     {
                         calculateDamage(0);
                         p1ShowSuffering(5);
@@ -403,20 +406,19 @@ namespace KeepGrinding
                 //Momentum from punches
                 if (p1Knockback > 0) 
                 {
-                    p1position -= (float)p1Knockback;
+                    p1X -= (float)p1Knockback;
                     p1Knockback-=0.05;//NOTE: change this to modify sliding distance
                 }
 
                 if (p2Knockback > 0)
                 {
-                    p2position += (float)p2Knockback;
+                    p2X += (float)p2Knockback;
                     p2Knockback-=0.05;
                 }
 
-                p1location = new Vector3(p1position, 0, 0);
-                p2location = new Vector3(p2position, 0, 0);
-                w1location = new Vector3(w1position, 0, 0);
-                w2location = new Vector3(w2position, 0, 0);
+                p1Position = new Vector2(p1X, p1Y);
+                p2Position = new Vector2(p2X, p2Y);
+
                 output = "Player 2 HP: " + player[1].getHealth();
                 output += "                            ";
                 output += "Player 1 HP: " + player[0].getHealth();
@@ -496,23 +498,6 @@ namespace KeepGrinding
             p2SufferingTimer = duration;
         }
 
-        //Converts 3D coordinates of players to return screen coordinates (very crudely)
-        int p1GetScreenX()
-        {
-            Vector3 coord = GraphicsDevice.Viewport.Project(p1location, Matrix.CreatePerspectiveFieldOfView(0.1f, graphics.GraphicsDevice.Viewport.AspectRatio, 0.1f, 10000.0f), Matrix.CreateLookAt(cameraPosition, avatarPosition, new Vector3(0.0f, 0.0f, 1.0f)), Matrix.CreateScale(new Vector3(1,1,1)) * Matrix.CreateFromYawPitchRoll(0, 0, 0 /*rotation.(x,y,z)*/) * Matrix.CreateTranslation(p1location));
-            float fValue = (coord.X + 689.8211f) * (1200f/2250.2361f);
-            int retVal = (int)Math.Round(fValue, 0);
-            return retVal;
-        }
-
-        int p2GetScreenX()
-        {
-            Vector3 coord = GraphicsDevice.Viewport.Project(p2location, Matrix.CreatePerspectiveFieldOfView(0.1f, graphics.GraphicsDevice.Viewport.AspectRatio, 0.1f, 10000.0f), Matrix.CreateLookAt(cameraPosition, avatarPosition, new Vector3(0.0f, 0.0f, 1.0f)), Matrix.CreateScale(new Vector3(1, 1, 1)) * Matrix.CreateFromYawPitchRoll(0, 0, 0 /*rotation.(x,y,z)*/) * Matrix.CreateTranslation(p2location));
-            float fValue = (coord.X + 689.8211f) * (1200f / 2250.2361f);
-            int retVal = (int)Math.Round(fValue, 0);
-            return retVal;
-        }
-
         void gameOver(int winner)
         {
             gameIsOver = true;
@@ -529,34 +514,16 @@ namespace KeepGrinding
             {
                 player[0].resetStats();
                 player[1].resetStats();
-                p1position = w1position = 0;
-                p2position = w2position = 5;
-                p1location = new Vector3(p1position, 0, 0);
-                p2location = new Vector3(p2position, 0, 0);
-                w1location = new Vector3(w1position, 0, 0);
-                w2location = new Vector3(w2position, 0, 0);
+                p1X = w1X = 100;
+                p2X = w2X = 1100;
+
+                p1Position = new Vector2(p1X, p1Y);
+                p2Position = new Vector2(p2X, p2Y);
                 punch1 = punch2 = punch1Animation = punch2Animation = punch1out = punch2out = gameIsOver = false;
                 allocatingStatsStage = true;
             }
         }
 
-        void DrawModel(Model model, Texture2D texture, Vector3 scale, Vector3 rotation, Vector3 location)
-        {
-            foreach (ModelMesh mesh in model.Meshes)
-            {
-                foreach (BasicEffect effect in mesh.Effects)
-                {
-                    effect.World = Matrix.CreateScale(scale) * Matrix.CreateFromYawPitchRoll(rotation.X, rotation.Y, rotation.Z) * Matrix.CreateTranslation(location);
-                    effect.View = Matrix.CreateLookAt(cameraPosition, avatarPosition, new Vector3(0.0f, 0.0f, 1.0f));
-                    effect.Projection = Matrix.CreatePerspectiveFieldOfView(0.1f, graphics.GraphicsDevice.Viewport.AspectRatio, 0.1f, 10000.0f);
-                    effect.EnableDefaultLighting();
-                    //effect.DiffuseColor = pipeColor[i];
-                    effect.Texture = texture;
-                    effect.TextureEnabled = true;
-                }
-                mesh.Draw();
-            }
-        }
 
         /// <summary>
         /// This is called when the game should draw itself.
@@ -566,9 +533,6 @@ namespace KeepGrinding
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            rotationMatrix = Matrix.CreateRotationZ(avatarYaw);
-            transformedReference = Vector3.Transform(thirdPersonReference, rotationMatrix);
-            cameraPosition = transformedReference + avatarPosition;
             // TODO: Add your drawing code here
             spriteBatch.Begin();//Background
 
@@ -585,13 +549,12 @@ namespace KeepGrinding
             }
             spriteBatch.End();
 
-            DrawModel(weapon1model, p1color, new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0, 0, 0), w1location);
-            DrawModel(weapon2model, p2color, new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0, 0, 0), w2location);
-            DrawModel(player1model, p1color, new Vector3(1, 1, 1), new Vector3(0, 0, 0), p1location);
-            DrawModel(player2model, p2color, new Vector3(1, 1, 1), new Vector3(0, 0, 0), p2location);
-
             spriteBatch.Begin();//Foreground
 
+            spriteBatch.Draw(p1color, p1Position, Color.White);
+            spriteBatch.Draw(p2color, p2Position, Color.White);
+            spriteBatch.Draw(p1color, w1Position, Color.White);
+            spriteBatch.Draw(p2color, w2Position, Color.White);
 
             // Find the center of the string
             FontOrigin = font.MeasureString(output) / 2;
