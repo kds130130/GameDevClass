@@ -21,7 +21,7 @@ namespace KeepGrinding
             attack = 1f;
             defense = 1f;
             speed = 1f;
-            health = 5000;
+            health = 100;
         }
 
         public void setStats(int h, int a, int s, int d)
@@ -33,7 +33,7 @@ namespace KeepGrinding
         }
         public void resetStats()
         {
-            health = 5000;
+            health = 100;
             attack = 1;
             speed = 1;
             defense = 1;

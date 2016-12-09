@@ -18,11 +18,13 @@ namespace KeepGrinding
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        Texture2D grey, blue, stripes, brown, white;
         Texture2D p1color, p2color;
         int p1LastSkin, p2LastSkin;
         Texture2D p1Label, p2Label;
         Texture2D p1Suffering, p2Suffering;
+        Texture2D playerOneRightTilt, playerOneLeftTilt, playerOneNoTilt;
+        Texture2D playerTwoRightTilt, playerTwoLeftTilt, playerTwoNoTilt;
+        Texture2D p1Punching, p2Punching;
         int p1SufferingTimer, p2SufferingTimer;
         double p1Knockback, p2Knockback;
         Texture2D allocBackground, combatBackground;
@@ -33,6 +35,7 @@ namespace KeepGrinding
         Model player2model;
         Model weapon1model;
         Model weapon2model;
+        Texture2D w1color, w2color;
         Player[] player = new Player[2];
         Vector3 thirdPersonReference = new Vector3(100, 0, 0);
         float avatarYaw = MathHelper.PiOver2;
@@ -43,8 +46,12 @@ namespace KeepGrinding
         Vector3 p1location, p2location, w1location, w2location;
         float p1position, p2position, w1position, w2position;
         bool punch1, punch2, punch1Animation, punch2Animation, punch1out, punch2out;
+        bool p1IsWalkingLeft, p2IsWalkingLeft, p1IsWalkingRight, p2IsWalkingRight;
         float SPEED_DIVISOR = 150f;
         float PUNCH_LENGTH = 3f;
+        int p1WalkAnimationFrame, p2WalkAnimationFrame;
+        int p1WalkingAnimationTimer, p2WalkingAnimationTimer;
+
         Vector2 fontPos;
         SpriteFont font;
         Vector2 FontOrigin;
@@ -68,6 +75,9 @@ namespace KeepGrinding
         {
             floorPos = new Vector2(0, 340);
             p1Knockback = p2Knockback = 0;
+            p1WalkAnimationFrame = p2WalkAnimationFrame = 0;
+            p1WalkingAnimationTimer = p2WalkingAnimationTimer = 0;
+            p1IsWalkingLeft = p2IsWalkingLeft = p1IsWalkingRight = p2IsWalkingRight = false;
 
             // TODO: Add your initialization logic here
             graphics.IsFullScreen = false;
@@ -112,21 +122,35 @@ namespace KeepGrinding
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            p2color = grey = Content.Load<Texture2D>("Hexes");
-            p1color = blue = Content.Load<Texture2D>("HexesSpecular");
-            white = Content.Load<Texture2D>("Marble");
+            p2color = Content.Load<Texture2D>("p2Standing");
+            p1color = Content.Load<Texture2D>("p1Standing");
+            /*white = Content.Load<Texture2D>("Marble");
             stripes = Content.Load<Texture2D>("Scratches");
-            brown = Content.Load<Texture2D>("Wood");
+            brown = Content.Load<Texture2D>("Wood");*/
 
             allocBackground = Content.Load<Texture2D>("Blue sky");
             allocFloorTexture = Content.Load<Texture2D>("Green field");
             combatBackground = Content.Load<Texture2D>("Blue sky");
             combatFloorTexture = Content.Load<Texture2D>("Green field");
 
-            p1Suffering = Content.Load<Texture2D>("Red");
-            p2Suffering = Content.Load<Texture2D>("Red");
+            p1Suffering = Content.Load<Texture2D>("image6");
+            p2Suffering = Content.Load<Texture2D>("image6_2");
             p1Label = Content.Load<Texture2D>("Player one");
             p2Label = Content.Load<Texture2D>("Player two");
+
+            playerOneRightTilt = Content.Load<Texture2D>("image4");
+            playerOneLeftTilt = Content.Load<Texture2D>("image2");
+            playerOneNoTilt = Content.Load<Texture2D>("p1Standing");
+
+            playerTwoRightTilt = Content.Load<Texture2D>("image2_2");
+            playerTwoLeftTilt = Content.Load<Texture2D>("image4_2");
+            playerTwoNoTilt = Content.Load<Texture2D>("p2Standing");
+
+            p1Punching = Content.Load<Texture2D>("image5");
+            p2Punching = Content.Load<Texture2D>("image5_2");
+
+            w1color = Content.Load<Texture2D>("image7");
+            w2color = Content.Load<Texture2D>("image7_2");
 
             player1model = Content.Load<Model>("Cube");
             player2model = Content.Load<Model>("Cube");
@@ -159,7 +183,7 @@ namespace KeepGrinding
             if (allocatingStatsStage)
             {
                 output = "Player 2                                         Player 1\n\n";
-                output += "     Press and Hold the Corresponding Buttons to Add\n     Press (Enter) or Spend All Points to Begin\n\n";
+                output += "     Press and Hold the Corresponding Buttons to Add\n     Press (Space) or Spend All Points to Begin\n\n";
                 output += "Points Remaining: " + player[1].getPoints();
                 if (player[1].getPoints() >= 100)
                 {
@@ -252,7 +276,7 @@ namespace KeepGrinding
                     }
                 }
                 //quick start
-                if (Keyboard.GetState().IsKeyDown(Keys.Enter))//Starts game. Change on-screen text if the hotkey changes
+                if (Keyboard.GetState().IsKeyDown(Keys.Space))//Starts game. Change on-screen text if the hotkey changes
                 {
                     allocatingStatsStage = false;
                 }
@@ -335,11 +359,21 @@ namespace KeepGrinding
                 {
                     if (Keyboard.GetState().IsKeyDown(Keys.A) && p2position < 11)
                     {
+                        p2IsWalkingLeft = true;
                         p2position += player[1].getSpeed() / SPEED_DIVISOR;
+                    }
+                    else
+                    {
+                        p2IsWalkingLeft = false;
                     }
                     if (Keyboard.GetState().IsKeyDown(Keys.D) && p2position > p1position + 1.6f)
                     {
+                        p2IsWalkingRight = true;
                         p2position -= player[1].getSpeed() / SPEED_DIVISOR;
+                    }
+                    else
+                    {
+                        p2IsWalkingRight = false;
                     }
                     w2position = p2position;
                 }
@@ -349,10 +383,20 @@ namespace KeepGrinding
                     if (Keyboard.GetState().IsKeyDown(Keys.Left) && p1position < p2position - 1.6f)
                     {
                         p1position += player[0].getSpeed() / SPEED_DIVISOR;
+                        p1IsWalkingLeft = true;
+                    }
+                    else
+                    {
+                        p1IsWalkingLeft = false;
                     }
                     if (Keyboard.GetState().IsKeyDown(Keys.Right) && p1position > -6)
                     {
                         p1position -= player[0].getSpeed() / SPEED_DIVISOR;
+                        p1IsWalkingRight = true;
+                    }
+                    else
+                    {
+                        p1IsWalkingRight = false;
                     }
                     w1position = p1position;
                 }
@@ -362,17 +406,105 @@ namespace KeepGrinding
                     if (w1position > (p2position - 1))
                     {
                         calculateDamage(1);
-                        p2ShowSuffering(5);
-                        p2Knockback = 0.5;//NOTE: change this to change initial knockback force
+                        p2ShowSuffering(50);
+                        if (p2position > 11)
+                        {
+                            p2Knockback = 0;
+                        }
+                        else
+                        {
+                            p2Knockback = 0.5;//NOTE: change this to change initial knockback force
+                        }
                     }
                     if (w2position < (p1position + 1))
                     {
                         calculateDamage(0);
-                        p1ShowSuffering(5);
+                        p1ShowSuffering(50);
                         p1Knockback = 0.5;
+                        if (p1position < -6)
+                        {
+                            p1Knockback = 0;
+                        }
+                        else
+                        {
+                            p1Knockback = 0.5;//NOTE: change this to change initial knockback force
+                        }
                     }
                 }
                 // TODO: Add your update logic here
+
+                
+
+                //Momentum from punches
+                if (p1Knockback > 0) 
+                {
+                    p1position -= (float)p1Knockback;
+                    
+                    if (p1position < -6)
+                    {
+                        p1Knockback = 0;
+                    }
+                    else
+                    {
+                        p1Knockback -= 0.05;//NOTE: change this to modify sliding distance
+                    }
+                }
+
+                if (p2Knockback > 0)
+                {
+                    p2position += (float)p2Knockback;
+                    //p2Knockback-=0.05;
+
+                    if (p2position > 11)
+                    {
+                        p2Knockback = 0;
+                    }
+                    else
+                    {
+                        p2Knockback -= 0.05;//NOTE: change this to modify sliding distance
+                    }
+                }
+
+                //Walking animation
+                if (p1IsWalkingLeft || p1IsWalkingRight)
+                {
+                    p1WalkingAnimationTimer++;
+                    if (p1WalkingAnimationTimer == 20)
+                    {
+                        p1WalkAnimationFrame++;
+                        p1WalkingAnimationTimer = 0;
+                        if (p1WalkAnimationFrame == 4)
+                        {
+                            p1WalkAnimationFrame = 0;
+                        }
+                    }
+                }
+                else
+
+                {
+                    p1WalkAnimationFrame = 0;
+                }
+                p1color = p1WalkingSkin(p1WalkAnimationFrame);
+
+                if (p2IsWalkingLeft || p2IsWalkingRight)
+                {
+                    p2WalkingAnimationTimer++;
+                    if (p2WalkingAnimationTimer == 20)
+                    {
+                        p2WalkAnimationFrame++;
+                        p2WalkingAnimationTimer = 0;
+                        if (p2WalkAnimationFrame == 4)
+                        {
+                            p2WalkAnimationFrame = 0;
+                        }
+                    }
+                }
+                else
+                {
+                    p2WalkAnimationFrame = 0;
+                }
+                p2color = p2WalkingSkin(p2WalkAnimationFrame);
+
 
                 //Animation of characters suffering
                 //Triggered by p1ShowSuffering methods
@@ -380,37 +512,35 @@ namespace KeepGrinding
                 {
                     //Sets new texture
                     p1color = p1Suffering;
-                    p1SufferingTimer-=1;
+                    p1SufferingTimer -= 1;
                 }
                 else
                 {
                     //Replaces texture with old one
-                    p1color = p1NewSkin(p1LastSkin);
+                    //p1color = p1NewSkin(p1LastSkin);
                 }
                 if (p2SufferingTimer > 0)
                 {
                     //Sets new texture
                     p2color = p2Suffering;
-                    p2SufferingTimer-=1;
+                    p2SufferingTimer -= 1;
                 }
                 else
                 {
                     //Replaces texture with old one
-                    p2color = p2NewSkin(p2LastSkin);
+                    //p2color = p2NewSkin(p2LastSkin);
 
                 }
 
-                //Momentum from punches
-                if (p1Knockback > 0) 
+                //punching animation
+                if (punch1Animation)
                 {
-                    p1position -= (float)p1Knockback;
-                    p1Knockback-=0.05;//NOTE: change this to modify sliding distance
+                    p1color = p1Punching;
                 }
 
-                if (p2Knockback > 0)
+                if (punch2Animation)
                 {
-                    p2position += (float)p2Knockback;
-                    p2Knockback-=0.05;
+                    p2color = p2Punching;
                 }
 
                 p1location = new Vector3(p1position, 0, 0);
@@ -435,19 +565,19 @@ namespace KeepGrinding
                 }
             } // end fighting stage
             // changing skins
-            if (Keyboard.GetState().IsKeyDown(Keys.S))
+            /*if (Keyboard.GetState().IsKeyDown(Keys.S))
             {
                 p2color = p2NewSkin(new Random().Next(0,5));
             }
             if (Keyboard.GetState().IsKeyDown(Keys.Down))
             {
                 p1color = p1NewSkin(new Random().Next(0,5));
-            }
+            }*/
 
             base.Update(gameTime);
         }
 
-        Texture2D newSkin()
+        /*Texture2D newSkin()
         {
             rand = new Random().Next(0, 5);
             switch (rand)
@@ -458,9 +588,33 @@ namespace KeepGrinding
                 case 3: return brown;
                 default: return grey;
             }
+        }*/
+
+        Texture2D p1WalkingSkin(int frame)
+        {
+            switch (frame)
+            {
+                case 0: return playerOneNoTilt;
+                case 1: return playerOneLeftTilt;
+                case 2: return playerOneNoTilt;
+                case 3: return playerOneRightTilt;
+                default: return playerOneNoTilt;
+            }
         }
 
-        Texture2D p1NewSkin(int skinID)
+        Texture2D p2WalkingSkin(int frame)
+        {
+            switch (frame)
+            {
+                case 0: return playerTwoNoTilt;
+                case 1: return playerTwoLeftTilt;
+                case 2: return playerTwoNoTilt;
+                case 3: return playerTwoRightTilt;
+                default: return playerTwoNoTilt;
+            }
+        }
+
+        /*Texture2D p1NewSkin(int skinID)
         {
             p1LastSkin = skinID;
             switch (skinID)
@@ -471,9 +625,9 @@ namespace KeepGrinding
                 case 3: return brown;
                 default: return grey;
             }
-        }
+        }*/
 
-        Texture2D p2NewSkin(int skinID)
+        /*Texture2D p2NewSkin(int skinID)
         {
             p2LastSkin = skinID;
             switch (skinID)
@@ -484,7 +638,7 @@ namespace KeepGrinding
                 case 3: return brown;
                 default: return grey;
             }
-        }
+        }*/
 
         void p1ShowSuffering(int duration)
         {
@@ -585,8 +739,8 @@ namespace KeepGrinding
             }
             spriteBatch.End();
 
-            DrawModel(weapon1model, p1color, new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0, 0, 0), w1location);
-            DrawModel(weapon2model, p2color, new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0, 0, 0), w2location);
+            DrawModel(weapon1model, w1color, new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0, 0, 0), w1location);
+            DrawModel(weapon2model, w2color, new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0, 0, 0), w2location);
             DrawModel(player1model, p1color, new Vector3(1, 1, 1), new Vector3(0, 0, 0), p1location);
             DrawModel(player2model, p2color, new Vector3(1, 1, 1), new Vector3(0, 0, 0), p2location);
 
